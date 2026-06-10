@@ -1,9 +1,9 @@
 import json
-from datetime import datetime, UTC
-import sys
 import os
+import sys
 
-# Add backend folder to path
+from datetime import datetime, UTC
+
 sys.path.append(
     os.path.abspath(
         os.path.join(
@@ -15,11 +15,15 @@ sys.path.append(
 
 from databases.db import SessionLocal
 from databases.models import Contact
+from databases.models import Thread
+from databases.models import Email
 
-# Create DB session
 db = SessionLocal()
 
-# Load JSON file
+# ==========================================
+# LOAD JSON
+# ==========================================
+
 json_path = os.path.join(
     os.path.dirname(__file__),
     "../../data/email-data-advanced.json"
@@ -28,29 +32,22 @@ json_path = os.path.join(
 with open(json_path, "r") as f:
     emails = json.load(f)
 
-print(f"Loaded {len(emails)} emails")
+print(f"\nLoaded {len(emails)} emails")
 
-# ----------------------------
-# Extract unique senders
-# ----------------------------
+# ==========================================
+# GENERATE CONTACTS
+# ==========================================
 
 unique_senders = set()
 
 for email in emails:
-
-    sender = email["sender"]
-
-    unique_senders.add(sender)
+    unique_senders.add(email["sender"])
 
 print(
     f"Found {len(unique_senders)} unique senders"
 )
 
-# ----------------------------
-# Insert Contacts
-# ----------------------------
-
-inserted = 0
+contact_inserted = 0
 
 for sender in unique_senders:
 
@@ -61,9 +58,7 @@ for sender in unique_senders:
     if existing:
         continue
 
-    domain = sender.split("@")[1]
-
-    company = domain.split(".")[0]
+    company = sender.split("@")[1].split(".")[0]
 
     contact = Contact(
         email=sender,
@@ -74,12 +69,122 @@ for sender in unique_senders:
 
     db.add(contact)
 
-    inserted += 1
+    contact_inserted += 1
 
 db.commit()
 
 print(
-    f"Inserted {inserted} contacts"
+    f"Inserted {contact_inserted} contacts"
 )
+
+# ==========================================
+# GENERATE THREADS
+# ==========================================
+
+unique_threads = {}
+
+for email in emails:
+
+    thread_id = email["thread_id"]
+
+    if thread_id not in unique_threads:
+        unique_threads[thread_id] = email
+
+thread_inserted = 0
+
+for thread_id, email_data in unique_threads.items():
+
+    existing = db.query(Thread).filter(
+        Thread.thread_id == thread_id
+    ).first()
+
+    if existing:
+        continue
+
+    thread = Thread(
+        thread_id=thread_id,
+        subject=email_data["subject"],
+        sender_email=email_data["sender"],
+        first_seen_at=datetime.now(UTC),
+        last_updated_at=datetime.now(UTC),
+        status="Open"
+    )
+
+    db.add(thread)
+
+    thread_inserted += 1
+
+db.commit()
+
+print(
+    f"Inserted {thread_inserted} threads"
+)
+
+# ==========================================
+# INSERT EMAILS
+# ==========================================
+
+email_inserted = 0
+
+for email_data in emails:
+
+    existing = db.query(Email).filter(
+        Email.message_id ==
+        email_data["message_id"]
+    ).first()
+
+    if existing:
+        continue
+
+    thread = db.query(Thread).filter(
+        Thread.thread_id ==
+        email_data["thread_id"]
+    ).first()
+
+    email = Email(
+        message_id=email_data["message_id"],
+        sender=email_data["sender"],
+        subject=email_data["subject"],
+        body=email_data["body"],
+        timestamp=datetime.fromisoformat(
+            email_data["timestamp"]
+            .replace("Z", "+00:00")
+        ),
+        thread_fk=thread.id,
+        status="Received"
+    )
+
+    db.add(email)
+
+    email_inserted += 1
+
+db.commit()
+
+print(
+    f"Inserted {email_inserted} emails"
+)
+
+# ==========================================
+# FINAL SUMMARY
+# ==========================================
+
+print("\n" + "=" * 50)
+
+print(
+    "Contacts:",
+    db.query(Contact).count()
+)
+
+print(
+    "Threads:",
+    db.query(Thread).count()
+)
+
+print(
+    "Emails:",
+    db.query(Email).count()
+)
+
+print("=" * 50)
 
 db.close()

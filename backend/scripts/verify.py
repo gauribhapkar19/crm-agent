@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 
 sys.path.append(
     os.path.abspath(
@@ -11,15 +11,13 @@ sys.path.append(
 )
 
 from databases.db import SessionLocal
-from databases.models import (
-    Contact,
-    Thread,
-    Email
-)
+from databases.models import Contact
+from databases.models import Thread
+from databases.models import Email
 
 db = SessionLocal()
 
-print("=" * 40)
+print("\n" + "=" * 50)
 
 print(
     "Contacts:",
@@ -36,4 +34,27 @@ print(
     db.query(Email).count()
 )
 
-print("=" * 40)
+print("=" * 50)
+
+sample = db.query(Email).first()
+
+if sample:
+
+    print("\nSample Email")
+
+    print(
+        "Message ID:",
+        sample.message_id
+    )
+
+    print(
+        "Sender:",
+        sample.sender
+    )
+
+    print(
+        "Subject:",
+        sample.subject
+    )
+
+db.close()

@@ -11,7 +11,7 @@ sys.path.append(
 )
 
 from databases.db import Base, engine
-from databases.models import *
+from databases.models import Contact, Thread, Email
 
 Base.metadata.create_all(bind=engine)
 
