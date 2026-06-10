@@ -5,7 +5,7 @@ from sqlalchemy import Text
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
 
-from db import Base
+from databases.db import Base
 
 
 class Contact(Base):
@@ -14,13 +14,20 @@ class Contact(Base):
 
     id = Column(Integer, primary_key=True)
 
-    email = Column(String, unique=True, nullable=False)
+    email = Column(
+        String,
+        unique=True,
+        nullable=False
+    )
 
     name = Column(String)
 
     company = Column(String)
 
-    status = Column(String, default="Active")
+    status = Column(
+        String,
+        default="Active"
+    )
 
     created_at = Column(DateTime)
 
@@ -33,7 +40,10 @@ class Thread(Base):
 
     id = Column(Integer, primary_key=True)
 
-    thread_id = Column(String, unique=True)
+    thread_id = Column(
+        String,
+        unique=True
+    )
 
     subject = Column(Text)
 
@@ -43,7 +53,10 @@ class Thread(Base):
 
     last_updated_at = Column(DateTime)
 
-    status = Column(String, default="Open")
+    status = Column(
+        String,
+        default="Open"
+    )
 
 
 class Email(Base):
@@ -52,7 +65,10 @@ class Email(Base):
 
     id = Column(Integer, primary_key=True)
 
-    message_id = Column(String, unique=True)
+    message_id = Column(
+        String,
+        unique=True
+    )
 
     thread_fk = Column(
         Integer,
